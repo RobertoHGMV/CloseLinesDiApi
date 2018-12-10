@@ -61,90 +61,23 @@ namespace CloseLinesDiApi
             if (!businessObject.GetByKey(docEntry))
                 throw new Exception($"Não foi possível localizar a cotação N°[{docEntry}] no SAP.");
 
-            var itensToCloseLines = GeItensWithNotStockControl(businessObject);
-            CloseLines(businessObject, itensToCloseLines);
-
-            if (businessObject.Update() != 0)
-                throw new Exception($"Erro ao atualizar documento no SAP.\n[{Company.GetLastErrorCode()}]-[{Company.GetLastErrorDescription()}]");
+            CloseLines(businessObject);
         }
 
-        private void CloseLines(Documents businessObject, IList<string> itensToCloseLines)
+        private void CloseLines(Documents businessObject)
         {
             for (var i = 0; i < businessObject.Lines.Count; i++)
             {
                 businessObject.Lines.SetCurrentLine(i);
 
-                if (itensToCloseLines.Any(x => x == businessObject.Lines.ItemCode) &&
-                    businessObject.Lines.LineStatus == BoStatus.bost_Open)
+                if (businessObject.Lines.LineStatus == BoStatus.bost_Open)
+                {
                     businessObject.Lines.LineStatus = BoStatus.bost_Close;
+
+                    if (businessObject.Update() != 0)
+                        throw new Exception($"Erro ao atualizar documento no SAP.\n[{Company.GetLastErrorCode()}]-[{Company.GetLastErrorDescription()}]");
+                }
             }
-        }
-
-        private IList<string> GeItensWithNotStockControl(Documents businessObject)
-        {
-            var itemsCode = new List<string>();
-
-            for (var i = 0; i < businessObject.Lines.Count; i++)
-            {
-                businessObject.Lines.SetCurrentLine(i);
-                itemsCode.Add(businessObject.Lines.ItemCode);
-            }
-
-            return GeItensWithNotStockControlFromDb(itemsCode);
-        }
-
-        private IList<string> GeItensWithNotStockControlFromDb(IList<string> listItemCode)
-        {
-            var itemsCode = new List<string>();
-            var data = GetItemCodeData(listItemCode);
-
-            foreach (DataRow row in data.Rows)
-            {
-                var itemCode = row.Field<string>("ItemCode");
-                itemsCode.Add(itemCode);
-            }
-
-            return itemsCode;
-        }
-
-        private DataTable GetItemCodeData(IList<string> listItemCode)
-        {
-            var connectionString = GetConnectionString();
-            var data = new DataTable();
-
-            using (var conn = new SqlConnection(connectionString))
-            {
-                var command = conn.CreateCommand();
-                command.CommandType = CommandType.Text;
-                command.CommandText = GetQuery(listItemCode);
-
-                conn.Open();
-                if (conn.State != ConnectionState.Open)
-                    throw new Exception("Não foi possível conectar ao banco de dados");
-
-                var reader = command.ExecuteReader();
-                data.Load(reader);
-                conn.Close();
-            }
-
-            return data;
-        }
-
-        private string GetQuery(IList<string> listItemCode)
-        {
-            var sb = new StringBuilder($@"SELECT [ItemCode] FROM [{CompanyDB}]..[OITM] 
-                                         WHERE [InvntItem] = 'N'
-                                         AND [ItemCode] IN(");
-
-            foreach (var itemCode in listItemCode)
-            {
-                if (itemCode == listItemCode.Last())
-                    sb.Append($"'{itemCode}');");
-                else
-                    sb.Append($"'{itemCode}',");
-            }
-
-            return sb.ToString();
         }
     }
 }
