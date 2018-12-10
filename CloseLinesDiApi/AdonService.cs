@@ -44,16 +44,6 @@ namespace CloseLinesDiApi
                            $"[{Company.GetLastErrorCode()}] - [{Company.GetLastErrorDescription()}]");
         }
 
-        private string GetConnectionString()
-        {
-            var connStr = new SqlConnectionStringBuilder();
-            connStr.DataSource = Server;
-            connStr.InitialCatalog = CompanyDB;
-            connStr.UserID = DbUserName;
-            connStr.Password = DbPassword;
-            return connStr.ToString();
-        }
-
         public void CloseLinesOfQuotation(int docEntry)
         {
             var businessObject = Company.GetBusinessObject(BoObjectTypes.oQuotations) as Documents;
