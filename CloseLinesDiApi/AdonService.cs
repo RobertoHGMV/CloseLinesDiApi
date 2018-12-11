@@ -63,11 +63,15 @@ namespace CloseLinesDiApi
                 if (businessObject.Lines.LineStatus == BoStatus.bost_Open)
                 {
                     businessObject.Lines.LineStatus = BoStatus.bost_Close;
-
-                    if (businessObject.Update() != 0)
-                        throw new Exception($"Erro ao atualizar documento no SAP.\n[{Company.GetLastErrorCode()}]-[{Company.GetLastErrorDescription()}]");
+                    UpdateDocument(businessObject);
                 }
             }
+        }
+
+        private void UpdateDocument(Documents businessObject)
+        {
+            if (businessObject.Update() != 0)
+                throw new Exception($"Erro ao atualizar documento no SAP.\n[{Company.GetLastErrorCode()}]-[{Company.GetLastErrorDescription()}]");
         }
     }
 }
