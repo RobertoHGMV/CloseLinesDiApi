@@ -51,7 +51,9 @@ namespace CloseLinesDiApi
             if (!businessObject.GetByKey(docEntry))
                 throw new Exception($"Não foi possível localizar a cotação N°[{docEntry}] no SAP.");
 
+            SetComments(businessObject);
             CloseLines(businessObject);
+            UpdateDocument(businessObject);
         }
 
         private void CloseLines(Documents businessObject)
@@ -61,10 +63,7 @@ namespace CloseLinesDiApi
                 businessObject.Lines.SetCurrentLine(i);
 
                 if (businessObject.Lines.LineStatus == BoStatus.bost_Open)
-                {
                     businessObject.Lines.LineStatus = BoStatus.bost_Close;
-                    UpdateDocument(businessObject);
-                }
             }
         }
 
@@ -72,6 +71,12 @@ namespace CloseLinesDiApi
         {
             if (businessObject.Update() != 0)
                 throw new Exception($"Erro ao atualizar documento no SAP.\n[{Company.GetLastErrorCode()}]-[{Company.GetLastErrorDescription()}]");
+        }
+
+        private void SetComments(Documents businessObject)
+        {
+            businessObject.Comments += "";
+            UpdateDocument(businessObject);
         }
     }
 }
